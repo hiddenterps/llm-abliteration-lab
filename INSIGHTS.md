@@ -523,6 +523,13 @@ CPU-feasible (0.5B model):
   scale.
 - Direction transfer: apply the Qwen2.5-0.5B direction to other prompts
   (for example Portuguese) and check whether it still removes refusals.
+- Choosing the abliteration layer by a combined refusal + full-response KL
+  score from the sweep (for example, layer 15 or 18), and re-running the
+  full eval on that model.
+- Untying embeddings before orthogonalizing, to measure how much the tied
+  `lm_head` edit matters.
+- Constraining ARA's `overcorrect_relative_weight` to stay below 1, to
+  see if that removes the high-KL “broken but uncensored” trials.
 
 Parked until a GPU is available:
 
@@ -534,10 +541,3 @@ Parked until a GPU is available:
   hand labels.
 - Full GSM8K (1,319 items) on a GPU, to tell whether the 3–5 item dip is
   real.
-- Choosing the abliteration layer by a combined refusal + full-response KL
-  score from the sweep (for example, layer 15 or 18), and re-running the
-  full eval on that model.
-- Untying embeddings before orthogonalizing, to measure how much the tied
-  `lm_head` edit matters.
-- Constraining ARA's `overcorrect_relative_weight` to stay below 1, to
-  see if that removes the high-KL “broken but uncensored” trials.
