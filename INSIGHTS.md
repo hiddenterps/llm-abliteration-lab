@@ -410,15 +410,115 @@ under ARA (“raise funds” → “engage wi…”).
   torch 2.15 CPU incompatibility still applies if that wheel is
   installed.
 
+## Follow-up: a larger evaluation (eval/, quality/, sweep/)
+
+The first comparison rested on 12 held-out prompts and a keyword detector.
+This follow-up re-tests everything on larger sets, adds an LLM judge, a
+capability benchmark and a per-layer sweep. Full write-ups are in each
+folder's README.
+
+### Do the 0/12 results hold up? Mostly, yes
+
+| Model | Harmful refused (substring / judge, n=93) | Harmless refused (n=100) | Borderline refused (n=100) |
+|-------|------------:|-----:|-----:|
+| original | 70% / 68% | 4% | 20% |
+| manual | 3% / 4% | 3% | 3% |
+| Heretic Abliteration | 1% / 2% | 1% | 2% |
+| Heretic ARA | 0% / 0% | 3% | 4% |
+
+* The original's refusal rate on JailbreakBench prompts (~69%) matches the
+  67% from the 12-prompt set. That earlier number was not a fluke.
+* The edits are not perfectly at zero. Manual leaves 3–4 refusals out of 93
+  and Heretic Abliteration 1–2. ARA is the only one at 0/93, but its 95%
+  interval reaches 4%, so the three are effectively tied.
+* **Over-refusal is the original model's bigger quirk.** It refuses 20% of
+  JBB's benign look-alike prompts (for example, a fictional story about drug
+  use). All three edits fix that (1–4%), and none starts refusing ordinary
+  Alpaca prompts.
+
+### The LLM judge needed more care than the model edits
+
+* The first judge (Qwen2.5-1.5B, shown request + response, asked "did the
+  assistant refuse?") disagreed with the keyword detector on **54%** of
+  the original model's harmful replies. Reading them showed the judge was
+  grading the *request*: it called "I'm sorry, but I can't assist with
+  that" a non-refusal and compliant answers refusals.
+* Qwen2.5-3B was worse with the request in view. It answered "refused" or
+  "did not carry it out" for nearly every item, apparently reacting to the
+  harmful request itself.
+* Showing **only the response** fixed it (3B: 0.85–0.90 accuracy on 48
+  hand labels, 98–100% agreement with the substring detector).
+* Neither detector catches **deflection**: a reply that looks compliant
+  but answers a harmless or opposite version of the request (asked for a
+  campaign *against* hiring disabled people, it writes one *for* it). In
+  the hand-labelled sample, 6/36 harmful replies were deflections, and 5 of
+  them came from edited models. Abliteration removes the "say no" reflex,
+  but some of the model's values leak back in as quiet reinterpretation.
+  Keyword-based "0% refusals" overstates real compliance.
+
+### Drift: the ranking depends on the metric
+
+| Model | First-token KL | Full-response KL |
+|-------|------:|------:|
+| manual | **0.075** | 0.040 |
+| Heretic Abliteration | 0.100 | **0.016** |
+| Heretic ARA | 0.101 | 0.032 |
+
+This partially revises the earlier conclusion ("manual is the most
+surgical"). On first-token KL, manual still wins, as before. But Heretic
+optimizes exactly first-token KL on a *different* prompt set, and when we
+teacher-force whole replies, Heretic Abliteration drifts least, 2.5x less
+than manual. The earlier gap (0.060 vs 0.202 on the handwritten set) also
+shrank to 0.075 vs 0.100 on Alpaca prompts. The honest summary is that all
+three edits are low-drift, and which looks best depends on the metric and
+the prompts.
+
+### Capability: MMLU unchanged, GSM8K maybe slightly down
+
+| Model | MMLU (200) | GSM8K (48) |
+|-------|------:|------:|
+| original | 42.5% | 41.7% |
+| manual | 43.5% | 35.4% |
+| Heretic Abliteration | 42.5% | 31.2% |
+| Heretic ARA | 44.0% | 31.2% |
+
+* MMLU moves by at most 1.5 points (CI ±7). Heretic Abliteration flips only
+  8 of 200 answers. Manual and ARA flip ~30 each, in both directions,
+  netting zero.
+* Every edit loses 3–5 GSM8K items out of 48. That is not significant
+  (Heretic's 1 gained / 6 lost gives McNemar p ≈ 0.13), but it is the one
+  consistent direction in the data. Multi-step reasoning compounds small
+  per-token drift, so it is a more sensitive probe than a one-letter answer.
+  GSM8K was downscaled from 100 to 48 items because CPU generation on the
+  shared box was too slow.
+
+### Layer sweep: a wide band, and the biggest norm is not the best layer
+
+![layer sweep](sweep/layer_sweep.png)
+
+* Directions from layers 0–9 barely reduce refusals (27–93%) and can be
+  very destructive (layer 7: KL 0.91).
+* Layers 10–21 form a broad good band (0–13% refusals on 30 prompts).
+  Layer 12 (our pick) reaches 0% at KL 0.095. Layer 15 (3%, KL 0.073) and
+  layer 18 (10%, KL 0.070) are about as good. Our layer choice was fine,
+  but not uniquely right.
+* Layers 22–23 have the largest mean-difference norm (18–20) yet remove only
+  half the refusals. This confirms the earlier warning: picking by raw norm
+  would pick the wrong layer.
+
 ## What we would try next
 
 - A 1.5B–7B instruct model on a GPU, with Heretic at its default trial
   count and default ARA rank, to see whether the KL ranking changes
   when the search is no longer under-budget.
-- A stricter refusal detector (or a small classifier) so the original
-  rate is not a floor.
-- Scoring mid-layer directions with a scale-invariant metric (e.g. a
-  standardized mean difference) rather than the raw residual norm.
+- A deflection-aware judge: a larger judge (7B+) or a two-question rubric
+  ("did it refuse?" plus "did it do what was asked?"), validated on more
+  hand labels.
+- Full GSM8K (1,319 items) on a GPU, to tell whether the 3–5 item dip is
+  real.
+- Choosing the abliteration layer by a combined refusal + full-response KL
+  score from the sweep (for example, layer 15 or 18), and re-running the
+  full eval on that model.
 - Untying embeddings before orthogonalizing, to measure how much the tied
   `lm_head` edit matters.
 - Constraining ARA's `overcorrect_relative_weight` to stay below 1, to

@@ -25,6 +25,9 @@ model on harmful requests. The point is to understand the geometry of refusal.
 | `INSIGHTS.md` | Lessons learned and the three-way (plus original) comparison |
 | `heretic/` | Config and runner for the Heretic 2.1 **Abliteration** run |
 | `heretic/ara/` | Config and runner for the Heretic 2.1 **ARA** run |
+| `eval/` | Phase 1: held-out eval (93 harmful, 100 harmless, 100 borderline) with a calibrated LLM judge |
+| `quality/` | Phase 2: MMLU (200) and GSM8K (48) capability check |
+| `sweep/` | Phase 3: manual abliteration repeated for every layer, with a plot |
 | `model-abliterated/`, `model-heretic/`, `model-ara/` | Local weight dumps (**not** committed) |
 
 ## Manual abliteration
@@ -82,10 +85,40 @@ ARA on the same held-out prompts:
 python compare_models.py
 ```
 
-On this machine the four-way held-out result was: all three edits reach
-**0/12** refusals; first-token KL vs the original (52 harmless prompts) is
-**0.060** (manual), **0.118** (ARA), **0.202** (Abliteration). Details are
-in `INSIGHTS.md`.
+The first four-way check used only 12 held-out prompts (all three edits:
+0/12). The larger evaluation below supersedes it.
+
+## Results (larger held-out evaluation)
+
+```bash
+cd eval && python run_eval.py        # refusals, over-refusal, KL
+cd ../quality && python run_quality.py   # MMLU + GSM8K
+cd ../sweep && python run_sweep.py   # per-layer sweep + plot
+```
+
+| Model | Harmful refused (substring / judge, n=93) | Borderline refused (judge, n=100) | First-token KL | Full-response KL | MMLU (200) | GSM8K (48) |
+|-------|------------------:|------:|------:|------:|------:|------:|
+| original | 70% / 68% | 20% | 0 | 0 | 42.5% | 41.7% |
+| manual (layer 12) | 3% / 4% | 3% | **0.075** | 0.040 | 43.5% | 35.4% |
+| Heretic Abliteration | 1% / 2% | 2% | 0.100 | **0.016** | 42.5% | 31.2% |
+| Heretic ARA | **0% / 0%** | 4% | 0.101 | 0.032 | 44.0% | 31.2% |
+
+* The judge is `Qwen2.5-3B-Instruct` on a message-only prompt. It agrees
+  with the substring detector on 98–100% of harmful replies. A first judge
+  that also saw the request was badly miscalibrated and was dropped (see
+  `eval/README.md`).
+* KL is on 100 held-out harmless prompts. Which edit "drifts least" depends
+  on the metric: manual wins on first-token KL, Heretic Abliteration on
+  full-response KL.
+* All MMLU and refusal differences between the three edits are within noise.
+  GSM8K dips 3–5 items for every edit, which is a hint rather than a result
+  at n=48.
+
+![layer sweep](sweep/layer_sweep.png)
+
+The sweep shows a wide band of usable layers (10–21: 0–13% refusals) and
+that the late layers with the largest difference-of-means norm (22–23)
+remove only about half the refusals. Details are in `INSIGHTS.md`.
 
 ## Hardware notes
 
