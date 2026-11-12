@@ -1,0 +1,8 @@
+# Heretic run (optional; not required for abliterate.py).
+# Install into the same venv as the manual demo.
+#
+# heretic-llm 2.1.0 may pull a torchvision wheel that is incompatible with
+# the official CPU build of torch 2.15 ("operator torchvision::nms does not exist").
+# If that happens, uninstall torchvision:
+#   pip uninstall -y torchvision
+heretic-llm==2.1.0

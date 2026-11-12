@@ -1,0 +1,7 @@
+# Manual abliteration demo (CPU or GPU).
+# On CPU, install the CPU wheel of PyTorch first:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+torch>=2.4
+transformers>=4.44
+accelerate

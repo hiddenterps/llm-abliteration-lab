@@ -1,0 +1,261 @@
+{
+  "package": "heretic-llm",
+  "version": "2.1.0",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "modifier": "heretic.modifiers.abliteration.Abliteration",
+  "hardware": {
+    "device": "cpu",
+    "gpu": false,
+    "notes": "8-core Xeon, 16GB RAM"
+  },
+  "settings": {
+    "n_trials": 12,
+    "n_startup_trials": 5,
+    "seed": 0,
+    "batch_size": 1,
+    "max_response_length": 48,
+    "device_map": "cpu",
+    "scorer_refusal_split": "mlabonne/harmful_behaviors test[:16]",
+    "scorer_kl_split": "mlabonne/harmless_alpaca test[:16]",
+    "direction_good_prompts": "mlabonne/harmless_alpaca train[:48]",
+    "direction_bad_prompts": "mlabonne/harmful_behaviors train[:48]",
+    "orthogonalize_direction": true,
+    "row_normalization": "full",
+    "selected_trial_index_on_pareto_front": 0,
+    "selected_trial": 9,
+    "runtime_seconds": 452.3
+  },
+  "baseline": {
+    "heretic_refusals": "14/16",
+    "heretic_kl": 0.0
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.18,
+        "attn.o_proj.max_weight_position": 17.7,
+        "attn.o_proj.min_weight": 0.76,
+        "attn.o_proj.min_weight_distance": 6.6,
+        "mlp.down_proj.max_weight": 1.31,
+        "mlp.down_proj.max_weight_position": 22.67,
+        "mlp.down_proj.min_weight": 0.5,
+        "mlp.down_proj.min_weight_distance": 11.13
+      },
+      "heretic_refusals": "3/16",
+      "heretic_refusals_rate": 0.1875,
+      "heretic_kl": 0.0382
+    },
+    {
+      "trial": 2,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 0.85,
+        "attn.o_proj.max_weight_position": 14.6,
+        "attn.o_proj.min_weight": 0.02,
+        "attn.o_proj.min_weight_distance": 11.66,
+        "mlp.down_proj.max_weight": 1.11,
+        "mlp.down_proj.max_weight_position": 21.8,
+        "mlp.down_proj.min_weight": 1.09,
+        "mlp.down_proj.min_weight_distance": 11.23
+      },
+      "heretic_refusals": "1/16",
+      "heretic_refusals_rate": 0.0625,
+      "heretic_kl": 0.1122
+    },
+    {
+      "trial": 3,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.25,
+        "attn.o_proj.max_weight_position": 15.12,
+        "attn.o_proj.min_weight": 1.18,
+        "attn.o_proj.min_weight_distance": 7.68,
+        "mlp.down_proj.max_weight": 0.48,
+        "mlp.down_proj.max_weight_position": 16.23,
+        "mlp.down_proj.min_weight": 0.37,
+        "mlp.down_proj.min_weight_distance": 6.84
+      },
+      "heretic_refusals": "3/16",
+      "heretic_refusals_rate": 0.1875,
+      "heretic_kl": 0.0519
+    },
+    {
+      "trial": 4,
+      "parameters": {
+        "direction_index": "16.30",
+        "attn.o_proj.max_weight": 1.23,
+        "attn.o_proj.max_weight_position": 19.48,
+        "attn.o_proj.min_weight": 1.16,
+        "attn.o_proj.min_weight_distance": 9.73,
+        "mlp.down_proj.max_weight": 0.38,
+        "mlp.down_proj.max_weight_position": 17.82,
+        "mlp.down_proj.min_weight": 0.26,
+        "mlp.down_proj.min_weight_distance": 1.77
+      },
+      "heretic_refusals": "13/16",
+      "heretic_refusals_rate": 0.8125,
+      "heretic_kl": 0.017
+    },
+    {
+      "trial": 5,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 0.89,
+        "attn.o_proj.max_weight_position": 16.7,
+        "attn.o_proj.min_weight": 0.32,
+        "attn.o_proj.min_weight_distance": 8.3,
+        "mlp.down_proj.max_weight": 0.52,
+        "mlp.down_proj.max_weight_position": 22.89,
+        "mlp.down_proj.min_weight": 0.05,
+        "mlp.down_proj.min_weight_distance": 3.67
+      },
+      "heretic_refusals": "13/16",
+      "heretic_refusals_rate": 0.8125,
+      "heretic_kl": 0.0144
+    },
+    {
+      "trial": 6,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.34,
+        "attn.o_proj.max_weight_position": 17.16,
+        "attn.o_proj.min_weight": 1.0,
+        "attn.o_proj.min_weight_distance": 5.44,
+        "mlp.down_proj.max_weight": 1.5,
+        "mlp.down_proj.max_weight_position": 16.78,
+        "mlp.down_proj.min_weight": 0.28,
+        "mlp.down_proj.min_weight_distance": 11.13
+      },
+      "heretic_refusals": "1/16",
+      "heretic_refusals_rate": 0.0625,
+      "heretic_kl": 0.1108
+    },
+    {
+      "trial": 7,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.18,
+        "attn.o_proj.max_weight_position": 20.19,
+        "attn.o_proj.min_weight": 0.63,
+        "attn.o_proj.min_weight_distance": 11.69,
+        "mlp.down_proj.max_weight": 1.43,
+        "mlp.down_proj.max_weight_position": 21.26,
+        "mlp.down_proj.min_weight": 0.56,
+        "mlp.down_proj.min_weight_distance": 12.01
+      },
+      "heretic_refusals": "1/16",
+      "heretic_refusals_rate": 0.0625,
+      "heretic_kl": 0.0796
+    },
+    {
+      "trial": 8,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.16,
+        "attn.o_proj.max_weight_position": 17.11,
+        "attn.o_proj.min_weight": 1.11,
+        "attn.o_proj.min_weight_distance": 4.39,
+        "mlp.down_proj.max_weight": 0.87,
+        "mlp.down_proj.max_weight_position": 22.05,
+        "mlp.down_proj.min_weight": 0.42,
+        "mlp.down_proj.min_weight_distance": 12.7
+      },
+      "heretic_refusals": "3/16",
+      "heretic_refusals_rate": 0.1875,
+      "heretic_kl": 0.0483
+    },
+    {
+      "trial": 9,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.34,
+        "attn.o_proj.max_weight_position": 18.41,
+        "attn.o_proj.min_weight": 0.07,
+        "attn.o_proj.min_weight_distance": 5.65,
+        "mlp.down_proj.max_weight": 1.45,
+        "mlp.down_proj.max_weight_position": 22.7,
+        "mlp.down_proj.min_weight": 1.01,
+        "mlp.down_proj.min_weight_distance": 7.9
+      },
+      "heretic_refusals": "1/16",
+      "heretic_refusals_rate": 0.0625,
+      "heretic_kl": 0.0296
+    },
+    {
+      "trial": 10,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.38,
+        "attn.o_proj.max_weight_position": 17.84,
+        "attn.o_proj.min_weight": 0.47,
+        "attn.o_proj.min_weight_distance": 5.57,
+        "mlp.down_proj.max_weight": 1.04,
+        "mlp.down_proj.max_weight_position": 20.97,
+        "mlp.down_proj.min_weight": 0.63,
+        "mlp.down_proj.min_weight_distance": 4.44
+      },
+      "heretic_refusals": "8/16",
+      "heretic_refusals_rate": 0.5,
+      "heretic_kl": 0.0224
+    },
+    {
+      "trial": 11,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.37,
+        "attn.o_proj.max_weight_position": 17.03,
+        "attn.o_proj.min_weight": 0.29,
+        "attn.o_proj.min_weight_distance": 10.56,
+        "mlp.down_proj.max_weight": 1.12,
+        "mlp.down_proj.max_weight_position": 17.08,
+        "mlp.down_proj.min_weight": 0.54,
+        "mlp.down_proj.min_weight_distance": 1.98
+      },
+      "heretic_refusals": "7/16",
+      "heretic_refusals_rate": 0.4375,
+      "heretic_kl": 0.0236
+    },
+    {
+      "trial": 12,
+      "parameters": {
+        "direction_index": "per layer",
+        "attn.o_proj.max_weight": 1.34,
+        "attn.o_proj.max_weight_position": 18.41,
+        "attn.o_proj.min_weight": 0.07,
+        "attn.o_proj.min_weight_distance": 5.65,
+        "mlp.down_proj.max_weight": 1.45,
+        "mlp.down_proj.max_weight_position": 22.7,
+        "mlp.down_proj.min_weight": 1.01,
+        "mlp.down_proj.min_weight_distance": 7.9
+      },
+      "heretic_refusals": "2/16",
+      "heretic_refusals_rate": 0.125,
+      "heretic_kl": 0.0539
+    }
+  ],
+  "best_trial": {
+    "trial": 9,
+    "parameters": {
+      "direction_index": "per layer",
+      "attn.o_proj.max_weight": 1.34,
+      "attn.o_proj.max_weight_position": 18.41,
+      "attn.o_proj.min_weight": 0.07,
+      "attn.o_proj.min_weight_distance": 5.65,
+      "mlp.down_proj.max_weight": 1.45,
+      "mlp.down_proj.max_weight_position": 22.7,
+      "mlp.down_proj.min_weight": 1.01,
+      "mlp.down_proj.min_weight_distance": 7.9
+    },
+    "heretic_refusals": "1/16",
+    "heretic_refusals_rate": 0.0625,
+    "heretic_kl": 0.0296
+  },
+  "notes": [
+    "Default Heretic 2.x modifier is ARA; this run used the Abliteration modifier.",
+    "Scores below are Heretic's own keyword scorer and first-token KL on its 16+16 split, not our held-out set.",
+    "The saved model is the Pareto-front trial with lowest refusals, then lowest KL (trial 9).",
+    "torchvision was uninstalled because its wheel conflicted with torch 2.15+cpu."
+  ]
+}
