@@ -506,7 +506,25 @@ the prompts.
   half the refusals. This confirms the earlier warning: picking by raw norm
   would pick the wrong layer.
 
+## Status (2026-11-12)
+
+The CPU phase of the lab is complete: manual abliteration, Heretic
+Abliteration, Heretic ARA, a held-out evaluation with a calibrated judge,
+a capability benchmark and a layer sweep are all committed. GPU work is
+deferred for now; the GPU items below are parked until hardware is
+available.
+
 ## What we would try next
+
+CPU-feasible (0.5B model):
+
+- Activation steering instead of weight edits: add or subtract the refusal
+  direction at inference time with a scale knob, and plot refusal rate vs
+  scale.
+- Direction transfer: apply the Qwen2.5-0.5B direction to other prompts
+  (for example Portuguese) and check whether it still removes refusals.
+
+Parked until a GPU is available:
 
 - A 1.5B–7B instruct model on a GPU, with Heretic at its default trial
   count and default ARA rank, to see whether the KL ranking changes
