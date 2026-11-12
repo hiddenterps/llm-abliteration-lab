@@ -5,3 +5,7 @@
 torch>=2.4
 transformers>=4.44
 accelerate
+
+# eval/, quality/ and sweep/ scripts
+datasets
+matplotlib

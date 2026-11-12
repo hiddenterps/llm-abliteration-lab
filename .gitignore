@@ -22,3 +22,8 @@ heretic/**/*.log
 .DS_Store
 .idea/
 .vscode/
+
+# Eval caches (raw responses, never committed)
+eval/cache/
+quality/cache/
+sweep/cache/
