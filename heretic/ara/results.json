@@ -1,0 +1,247 @@
+{
+  "package": "heretic-llm",
+  "version": "2.1.0",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "modifier": "heretic.modifiers.ara.ARA",
+  "hardware": {
+    "device": "cpu",
+    "gpu": false,
+    "notes": "8-core Xeon, 16GB RAM"
+  },
+  "settings": {
+    "n_trials": 12,
+    "n_startup_trials": 5,
+    "seed": 0,
+    "batch_size": 1,
+    "max_response_length": 48,
+    "device_map": "cpu",
+    "dtypes": [
+      "bfloat16",
+      "float32"
+    ],
+    "scorer_refusal_split": "mlabonne/harmful_behaviors test[:16]",
+    "scorer_kl_split": "mlabonne/harmless_alpaca test[:16]",
+    "good_prompts": "mlabonne/harmless_alpaca train[:48]",
+    "bad_prompts": "mlabonne/harmful_behaviors train[:48]",
+    "preserve_row_magnitudes": true,
+    "lora_rank": 16,
+    "n_optimization_steps": 3,
+    "learning_rate": 1.0,
+    "max_iter": 20,
+    "history_size": 10,
+    "selected_trial_index_on_pareto_front": 0,
+    "selected_trial": 10,
+    "runtime_seconds": 712.4,
+    "changes_from_defaults": {
+      "dtypes": "default ['auto','float16','bfloat16','float32'] -> ['bfloat16','float32']",
+      "device_map": "default 'auto' -> 'cpu'",
+      "batch_size": "default 0 (auto) -> 1",
+      "max_batch_size": "default 128 -> 2",
+      "max_response_length": "default 100 -> 48",
+      "n_trials": "default 100 -> 12",
+      "n_startup_trials": "default 30 -> 5",
+      "batch_size_test_prompts.split": "default train[:256] -> train[:8]",
+      "response_prefix_test_prompts.split": "default train[:100] -> train[:8]",
+      "scorer.KeywordRate.prompts.split": "default test[:100] -> test[:16]",
+      "scorer.KLDivergence.prompts.split": "default test[:100] -> test[:16]",
+      "modifier.ARA.lora_rank": "default 50 -> 16",
+      "modifier.ARA.n_optimization_steps": "default 5 -> 3",
+      "modifier.ARA.good_prompts.split": "default train[:400] -> train[:48]",
+      "modifier.ARA.bad_prompts.split": "default train[:400] -> train[:48]"
+    }
+  },
+  "baseline": {
+    "heretic_refusals": "14/16",
+    "heretic_kl": 0.0
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "parameters": {
+        "start_layer_index": 7,
+        "end_layer_index": 21,
+        "preserve_good_behavior_weight": 0.6028,
+        "steer_bad_behavior_weight": 0.0151,
+        "overcorrect_relative_weight": 0.5508,
+        "neighbor_count": 10
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 0.663
+    },
+    {
+      "trial": 2,
+      "parameters": {
+        "start_layer_index": 5,
+        "end_layer_index": 23,
+        "preserve_good_behavior_weight": 0.9637,
+        "steer_bad_behavior_weight": 0.0034,
+        "overcorrect_relative_weight": 1.0292,
+        "neighbor_count": 8
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 12.8635
+    },
+    {
+      "trial": 3,
+      "parameters": {
+        "start_layer_index": 7,
+        "end_layer_index": 24,
+        "preserve_good_behavior_weight": 0.071,
+        "steer_bad_behavior_weight": 0.0002,
+        "overcorrect_relative_weight": 0.0263,
+        "neighbor_count": 13
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 0.1071
+    },
+    {
+      "trial": 4,
+      "parameters": {
+        "start_layer_index": 10,
+        "end_layer_index": 23,
+        "preserve_good_behavior_weight": 0.9786,
+        "steer_bad_behavior_weight": 0.1573,
+        "overcorrect_relative_weight": 0.5999,
+        "neighbor_count": 12
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 1.6643
+    },
+    {
+      "trial": 5,
+      "parameters": {
+        "start_layer_index": 1,
+        "end_layer_index": 20,
+        "preserve_good_behavior_weight": 0.1434,
+        "steer_bad_behavior_weight": 0.6007,
+        "overcorrect_relative_weight": 0.6784,
+        "neighbor_count": 7
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 3.176
+    },
+    {
+      "trial": 6,
+      "parameters": {
+        "start_layer_index": 9,
+        "end_layer_index": 13,
+        "preserve_good_behavior_weight": 0.0788,
+        "steer_bad_behavior_weight": 0.0174,
+        "overcorrect_relative_weight": 0.0729,
+        "neighbor_count": 15
+      },
+      "heretic_refusals": "10/16",
+      "heretic_refusals_rate": 0.625,
+      "heretic_kl": 0.4934
+    },
+    {
+      "trial": 7,
+      "parameters": {
+        "start_layer_index": 3,
+        "end_layer_index": 23,
+        "preserve_good_behavior_weight": 0.1217,
+        "steer_bad_behavior_weight": 0.0001,
+        "overcorrect_relative_weight": 0.8134,
+        "neighbor_count": 15
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 0.106
+    },
+    {
+      "trial": 8,
+      "parameters": {
+        "start_layer_index": 1,
+        "end_layer_index": 18,
+        "preserve_good_behavior_weight": 0.0008,
+        "steer_bad_behavior_weight": 0.0316,
+        "overcorrect_relative_weight": 0.6237,
+        "neighbor_count": 15
+      },
+      "heretic_refusals": "6/16",
+      "heretic_refusals_rate": 0.375,
+      "heretic_kl": 3.1719
+    },
+    {
+      "trial": 9,
+      "parameters": {
+        "start_layer_index": 4,
+        "end_layer_index": 24,
+        "preserve_good_behavior_weight": 0.4857,
+        "steer_bad_behavior_weight": 0.0006,
+        "overcorrect_relative_weight": 1.107,
+        "neighbor_count": 15
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 15.4232
+    },
+    {
+      "trial": 10,
+      "parameters": {
+        "start_layer_index": 0,
+        "end_layer_index": 23,
+        "preserve_good_behavior_weight": 0.5056,
+        "steer_bad_behavior_weight": 0.0001,
+        "overcorrect_relative_weight": 0.377,
+        "neighbor_count": 11
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 0.0553
+    },
+    {
+      "trial": 11,
+      "parameters": {
+        "start_layer_index": 2,
+        "end_layer_index": 24,
+        "preserve_good_behavior_weight": 0.7007,
+        "steer_bad_behavior_weight": 0.0013,
+        "overcorrect_relative_weight": 0.5145,
+        "neighbor_count": 15
+      },
+      "heretic_refusals": "3/16",
+      "heretic_refusals_rate": 0.1875,
+      "heretic_kl": 0.1701
+    },
+    {
+      "trial": 12,
+      "parameters": {
+        "start_layer_index": 0,
+        "end_layer_index": 23,
+        "preserve_good_behavior_weight": 0.5056,
+        "steer_bad_behavior_weight": 0.0001,
+        "overcorrect_relative_weight": 0.377,
+        "neighbor_count": 11
+      },
+      "heretic_refusals": "0/16",
+      "heretic_refusals_rate": 0.0,
+      "heretic_kl": 0.1227
+    }
+  ],
+  "best_trial": {
+    "trial": 10,
+    "parameters": {
+      "start_layer_index": 0,
+      "end_layer_index": 23,
+      "preserve_good_behavior_weight": 0.5056,
+      "steer_bad_behavior_weight": 0.0001,
+      "overcorrect_relative_weight": 0.377,
+      "neighbor_count": 11
+    },
+    "heretic_refusals": "0/16",
+    "heretic_refusals_rate": 0.0,
+    "heretic_kl": 0.0553
+  },
+  "notes": [
+    "ARA is the default modifier in Heretic 2.x.",
+    "Scores below are Heretic's keyword scorer and first-token KL on its 16+16 mlabonne split, not our held-out set.",
+    "The saved model is the Pareto-front trial with lowest refusals, then lowest KL (trial 10).",
+    "Wall-clock runtime includes model load, I/O collection, 12 trials, and merge/save (712.4 s)."
+  ]
+}

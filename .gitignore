@@ -8,11 +8,15 @@ __pycache__/
 # Model weights (too large; keep them on disk only)
 model-abliterated/
 model-heretic/
+model-ara/
 
 # Heretic runtime artifacts
 heretic/checkpoints/
+heretic/ara/checkpoints/
 heretic/run.log
+heretic/ara/run.log
 heretic/*.log
+heretic/**/*.log
 
 # Editor / OS
 .DS_Store

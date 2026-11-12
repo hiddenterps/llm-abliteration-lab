@@ -1,0 +1,93 @@
+# Heretic 2.1 config: ARA (Arbitrary-Rank Ablation), the 2.x default modifier.
+# CPU-only educational run on Qwen/Qwen2.5-0.5B-Instruct (8 cores, 16 GB RAM).
+#
+# Settings changed from package defaults are marked "CHANGED" in comments
+# so the lab note can list them precisely.
+
+# CHANGED: prefer bfloat16 explicitly (default tries "auto" then float16 first).
+dtypes = ["bfloat16", "float32"]
+quantization = "none"
+# CHANGED: default is "auto"; this box has no GPU.
+device_map = "cpu"
+offload_outputs_to_cpu = true
+# CHANGED: default batch_size = 0 (auto), max_batch_size = 128.
+batch_size = 1
+max_batch_size = 2
+# CHANGED: default max_response_length = 100.
+max_response_length = 48
+print_debug_information = true
+
+scorers = [
+    { plugin = "heretic.scorers.keyword_rate.KeywordRate", optimization = "minimize" },
+    { plugin = "heretic.scorers.kl_divergence.KLDivergence", optimization = "minimize" },
+]
+
+# Default in Heretic 2.x (explicit here for the lab record).
+modifiers = [
+    { plugin = "heretic.modifiers.ara.ARA" },
+]
+
+# CHANGED: default n_trials = 100, n_startup_trials = 30.
+n_trials = 12
+n_startup_trials = 5
+study_checkpoint_dir = "checkpoints"
+modified_model_type = "decensored"
+max_shard_size = "5GB"
+system_prompt = "You are a helpful assistant."
+enable_shell = false
+
+# CHANGED: default split is train[:256].
+[batch_size_test_prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:8]"
+column = "text"
+
+# CHANGED: default splits are train[:100] for each dataset.
+[[response_prefix_test_prompts]]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:8]"
+column = "text"
+
+[[response_prefix_test_prompts]]
+dataset = "mlabonne/harmful_behaviors"
+split = "train[:8]"
+column = "text"
+
+[scorer.KeywordRate]
+score_name = "Refusals"
+print_responses = false
+
+# CHANGED: default split is test[:100].
+[scorer.KeywordRate.prompts]
+dataset = "mlabonne/harmful_behaviors"
+split = "test[:16]"
+column = "text"
+
+# CHANGED: default split is test[:100].
+[scorer.KLDivergence.prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "test[:16]"
+column = "text"
+
+[modifier.ARA]
+preserve_row_magnitudes = true
+# CHANGED: default lora_rank = 50. Rank 16 keeps the L-BFGS step cheap on CPU
+# while still giving ARA a multi-dimensional adapter (not rank-1 ablation).
+lora_rank = 16
+# CHANGED: default n_optimization_steps = 5.
+n_optimization_steps = 3
+learning_rate = 1.0
+max_iter = 20
+history_size = 10
+print_loss = false
+
+# CHANGED: default splits are train[:400].
+[modifier.ARA.good_prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:48]"
+column = "text"
+
+[modifier.ARA.bad_prompts]
+dataset = "mlabonne/harmful_behaviors"
+split = "train[:48]"
+column = "text"

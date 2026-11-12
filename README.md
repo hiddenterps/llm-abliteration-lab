@@ -1,7 +1,8 @@
 # LLM Abliteration Lab
 
 A small, hands-on lab for **abliteration** (refusal-direction ablation) on a
-tiny instruct model, plus a comparison with [Heretic](https://github.com/p-e-w/heretic).
+tiny instruct model, plus a comparison with [Heretic](https://github.com/p-e-w/heretic)
+(both the Abliteration modifier and the 2.x default, **ARA**).
 
 The method comes from [Arditi et al., 2024, *Refusal in LLMs is mediated by a
 single direction*](https://arxiv.org/abs/2406.11717): in many chat models the
@@ -20,10 +21,11 @@ model on harmful requests. The point is to understand the geometry of refusal.
 | `abliterate.py` | Manual abliteration: collect activations, pick a layer, orthogonalize weights |
 | `results.json` | Refusal rates and short harmless examples from the manual run |
 | `refusal_direction.pt` | Unit refusal vector from the chosen layer (layer 12) |
-| `compare_models.py` | Held-out comparison of original vs manual vs Heretic |
-| `INSIGHTS.md` | Lessons learned and the Heretic comparison |
-| `heretic/` | Config and runner used for the Heretic 2.1 run |
-| `model-abliterated/`, `model-heretic/` | Local weight dumps (**not** committed) |
+| `compare_models.py` | Held-out comparison of original vs manual vs Heretic Abliteration vs ARA |
+| `INSIGHTS.md` | Lessons learned and the three-way (plus original) comparison |
+| `heretic/` | Config and runner for the Heretic 2.1 **Abliteration** run |
+| `heretic/ara/` | Config and runner for the Heretic 2.1 **ARA** run |
+| `model-abliterated/`, `model-heretic/`, `model-ara/` | Local weight dumps (**not** committed) |
 
 ## Manual abliteration
 
@@ -61,19 +63,29 @@ pip install -r heretic/requirements.txt
 # If import fails with torchvision/nms errors on a CPU torch wheel:
 pip uninstall -y torchvision
 
+# Directional ablation (comparable to the manual script)
 ./heretic/run_heretic.sh
+
+# Default Heretic 2.x modifier: Arbitrary-Rank Ablation
+./heretic/ara/run_ara.sh
 ```
 
-The config in `heretic/config.toml` uses Heretic 2.1's **Abliteration**
-modifier (not the default ARA) so the result is comparable to the manual
-script. Trial and prompt counts are reduced for a CPU-sized budget.
-The output model is written to `model-heretic/` and is not committed.
+`heretic/config.toml` uses the **Abliteration** modifier. `heretic/ara/config.toml`
+uses **ARA**, Heretic 2.x's default. Both runs use a reduced CPU-sized budget
+(12 trials, shortened prompt slices). Output models go to `model-heretic/` and
+`model-ara/` and are not committed.
 
-Then compare both edited models on the same held-out prompts:
+Then compare the original, the manual edit, Heretic Abliteration, and Heretic
+ARA on the same held-out prompts:
 
 ```bash
 python compare_models.py
 ```
+
+On this machine the four-way held-out result was: all three edits reach
+**0/12** refusals; first-token KL vs the original (52 harmless prompts) is
+**0.060** (manual), **0.118** (ARA), **0.202** (Abliteration). Details are
+in `INSIGHTS.md`.
 
 ## Hardware notes
 

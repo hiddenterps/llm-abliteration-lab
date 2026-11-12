@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Compare the original model, the manually abliterated model, and the Heretic
-model on the same held-out prompts used by abliterate.py.
+Compare the original model, the manually abliterated model, the Heretic Abliteration model, and the Heretic ARA model
+on the same held-out prompts used by abliterate.py.
 
 Reports:
   * refusal rate (same substring detector as the manual script)
@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent
 ORIGINAL_ID = lab.MODEL_ID
 MANUAL_DIR = ROOT / "model-abliterated"
 HERETIC_DIR = ROOT / "model-heretic"
+ARA_DIR = ROOT / "model-ara"
 OUT_PATH = ROOT / "heretic" / "comparison.json"
 
 
@@ -80,10 +81,15 @@ def main() -> None:
     # changing the held-out refusal evaluation.
     harmless_for_kl = list(lab.PROMPTS_HARMLESS)
 
+    missing = []
     if not MANUAL_DIR.exists():
-        raise SystemExit(f"Missing {MANUAL_DIR}; run abliterate.py first.")
+        missing.append(f"{MANUAL_DIR} (run abliterate.py)")
     if not HERETIC_DIR.exists():
-        raise SystemExit(f"Missing {HERETIC_DIR}; run heretic/run_heretic.sh first.")
+        missing.append(f"{HERETIC_DIR} (run heretic/run_heretic.sh)")
+    if not ARA_DIR.exists():
+        missing.append(f"{ARA_DIR} (run heretic/ara/run_ara.sh)")
+    if missing:
+        raise SystemExit("Missing model(s):\n  - " + "\n  - ".join(missing))
 
     results = {"eval_refusal_n": len(eval_r), "harmless_kl_n": len(harmless_for_kl)}
 
@@ -132,6 +138,7 @@ def main() -> None:
 
     results["manual"] = run_edited("manual", MANUAL_DIR)
     results["heretic"] = run_edited("heretic", HERETIC_DIR)
+    results["ara"] = run_edited("ara", ARA_DIR)
     results["runtime_seconds"] = round(time.perf_counter() - t0, 1)
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -139,12 +146,18 @@ def main() -> None:
 
     lab.log("\n===== COMPARISON =====")
     lab.log(
-        f"{'model':<12} {'refusal':<12} {'KL vs orig (harmless, first token)':<36}"
+        f"{'model':<18} {'refusal':<12} {'KL vs orig (harmless, first token)':<36}"
     )
-    for name in ("original", "manual", "heretic"):
+    labels = {
+        "original": "original",
+        "manual": "manual",
+        "heretic": "heretic-ablit",
+        "ara": "heretic-ARA",
+    }
+    for name in ("original", "manual", "heretic", "ara"):
         r = results[name]
         lab.log(
-            f"{name:<12} {r['refusal_count']:<12} {r['kl_vs_original']:.4f}"
+            f"{labels[name]:<18} {r['refusal_count']:<12} {r['kl_vs_original']:.4f}"
         )
     lab.log(f"\nWrote {OUT_PATH}")
 

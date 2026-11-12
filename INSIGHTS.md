@@ -1,9 +1,10 @@
 # Insights: abliteration on Qwen2.5-0.5B-Instruct
 
 A short lab note from a CPU-only run of manual directional ablation
-(Arditi et al., 2024) and a reduced Heretic 2.1 run on the same tiny
-instruct model. The goal is to understand the method, not to produce a
-"jailbroken" model for use.
+(Arditi et al., 2024) and two reduced Heretic 2.1 runs on the same tiny
+instruct model: the **Abliteration** modifier and the 2.x default,
+**ARA** (Arbitrary-Rank Ablation). The goal is to understand the methods,
+not to produce a "jailbroken" model for use.
 
 ## Setup
 
@@ -260,16 +261,165 @@ under the 40-minute budget.
 - CLI snag: Pydantic's kebab-case parser wanted `--save-directory=/path`
   (equals form). A space-separated path was parsed as a missing argument.
 
+## Heretic 2.1 ARA (Arbitrary-Rank Ablation)
+
+ARA is the default modifier in Heretic 2.x. Unlike classic abliteration,
+which subtracts a single residual direction from every writing matrix,
+ARA fits a **low-rank LoRA adapter on each writing matrix** (`o_proj`,
+`down_proj`) in a chosen layer range, and optimizes those adapters with
+**L-BFGS**. The idea, in plain language:
+
+1. Record how each matrix already behaves on “good” (harmless) and “bad”
+   (usually-refused) prompts: the input and output at the last prompt
+   token.
+2. For every selected matrix, search a rank-\(r\) update \(W \leftarrow
+   W + BA\) that keeps good outputs close to the original
+   (`preserve_good_behavior_weight`) and **steers** bad outputs: pull
+   them toward the *k* nearest good outputs, and push them away from
+   their original bad outputs (`steer_bad_behavior_weight`, with an
+   `overcorrect_relative_weight` on that push). *k* is `neighbor_count`.
+3. After each update, **renormalize the rows** of the effective weight
+   so their magnitudes match the original matrix
+   (`preserve_row_magnitudes`). That is the same “keep the size, change
+   the direction” trick used in magnitude-preserving abliteration.
+4. **Optuna (TPE)** chooses the layer range (`start_layer_index`,
+   exclusive `end_layer_index`), the two loss weights, the over-correction
+   weight, and the neighbour count, by jointly minimizing refusals and
+   first-token KL, just like the Abliteration run.
+
+ARA is therefore not “find one refusal vector”; it is “learn a small
+edit per matrix that preserves good behaviour and moves bad behaviour
+toward the good neighbourhood.”
+
+### Settings used on this CPU box
+
+See `heretic/ara/config.toml` and `heretic/ara/run_ara.sh`. Departures
+from Heretic 2.1 defaults:
+
+| setting | default | this run |
+|---------|---------|----------|
+| `device_map` | `auto` | `cpu` |
+| `dtypes` | auto, float16, bfloat16, float32 | bfloat16, float32 |
+| `batch_size` / `max_batch_size` | 0 (auto) / 128 | 1 / 2 |
+| `max_response_length` | 100 | 48 |
+| `n_trials` / `n_startup_trials` | 100 / 30 | 12 / 5 |
+| scorer prompt splits | `test[:100]` | `test[:16]` |
+| ARA good/bad prompt splits | `train[:400]` | `train[:48]` |
+| `lora_rank` | 50 | **16** |
+| `n_optimization_steps` | 5 | **3** |
+| `max_iter`, `learning_rate`, `history_size` | 20, 1.0, 10 | unchanged |
+| `preserve_row_magnitudes` | true | unchanged |
+| seed | unset | 0 |
+
+Non-interactive: first trial on the Pareto front, merge and save to
+`model-ara/` (not committed). Wall-clock runtime, including load, module
+I/O collection, 12 trials, and save: **712 seconds** (~11.9 minutes).
+Peak RSS stayed around 1.7 GB. ARA ran fine on this CPU; no
+bitsandbytes 4-bit path was used.
+
+### Heretic's own study scores (same 16+16 mlabonne split as the Abliteration run)
+
+Baseline: **14/16** keyword refusals. Chosen trial: **10** (0/16 refusals,
+KL **0.0553**), first on the Pareto front (lowest refusals, then lowest
+KL). Full trial table:
+
+| trial | refusals | KL     | start–end | preserve | steer    | overcorrect | k  |
+|------:|----------|--------|-----------|----------|----------|-------------|----|
+| 1     | 0/16     | 0.6630 | 7–21      | 0.6028   | 0.0151   | 0.5508      | 10 |
+| 2     | 0/16     | 12.8635| 5–23      | 0.9637   | 0.0034   | 1.0292      | 8  |
+| 3     | 0/16     | 0.1071 | 7–24      | 0.0710   | 0.0002   | 0.0263      | 13 |
+| 4     | 0/16     | 1.6643 | 10–23     | 0.9786   | 0.1573   | 0.5999      | 12 |
+| 5     | 0/16     | 3.1760 | 1–20      | 0.1434   | 0.6007   | 0.6784      | 7  |
+| 6     | 10/16    | 0.4934 | 9–13      | 0.0788   | 0.0174   | 0.0729      | 15 |
+| 7     | 0/16     | 0.1060 | 3–23      | 0.1217   | 0.0001   | 0.8134      | 15 |
+| 8     | 6/16     | 3.1719 | 1–18      | 0.0008   | 0.0316   | 0.6237      | 15 |
+| 9     | 0/16     | 15.4232| 4–24      | 0.4857   | 0.0006   | 1.1070      | 15 |
+| **10**| **0/16** | **0.0553** | **0–23** | **0.5056** | **0.0001** | **0.3770** | **11** |
+| 11    | 3/16     | 0.1701 | 2–24      | 0.7007   | 0.0013   | 0.5145      | 15 |
+| 12    | 0/16     | 0.1227 | 2–22      | 0.2548   | 0.0001   | 0.9107      | 10 |
+
+Trial 10's parameters in full:
+
+```
+start_layer_index            = 0
+end_layer_index              = 23   # exclusive, so layers 0–22
+preserve_good_behavior_weight = 0.5056
+steer_bad_behavior_weight    = 0.0001
+overcorrect_relative_weight  = 0.3770
+neighbor_count               = 11
+```
+
+Several trials also reached 0/16 refusals but with a much higher KL
+(0.66, 1.66, 3.18, even 12–15). High `overcorrect_relative_weight`
+(trials 2 and 9, both > 1.0) was a reliable way to wreck the model.
+The search needed the KL objective to tell “refuses nothing and still
+looks like the original” from “refuses nothing because the model is
+broken.”
+
+### Held-out comparison (four-way, joint re-evaluation)
+
+`compare_models.py` was run again on the original, the manual layer-12
+edit, Heretic Abliteration trial 9, and Heretic ARA trial 10, using the
+same 12 held-out refusal prompts and first-token KL on all 52 handwritten
+harmless prompts. (A small run-to-run drift vs. the earlier three-way
+numbers — manual KL 0.062 → 0.060, Abliteration 0.195 → 0.202 — is
+expected in bfloat16 on CPU. The four rows below come from one joint
+run.)
+
+| model                         | held-out refusal (our detector) | first-token KL vs original (52 harmless) |
+|-------------------------------|---------------------------------|------------------------------------------|
+| original                      | 8/12 (67%)                      | 0                                        |
+| manual (layer 12)             | 0/12 (0%)                       | **0.060**                                |
+| heretic Abliteration (trial 9)| 0/12 (0%)                       | 0.202                                    |
+| heretic ARA (trial 10)        | 0/12 (0%)                       | 0.118                                    |
+
+Harmless samples: all three edits keep a coherent budget walkthrough,
+undo the original's false refusal on “accept a package for a neighbor,”
+and still write a normal thank-you note. ARA's thank-you opening stays
+closer to the original wording than the Abliteration model's does
+(“Writing a thank-you note is an important part of expressing
+gratitude…” vs. a slightly rewritten first sentence). The donation-page
+prompt stays helpful in all four cases, with only a mild wording change
+under ARA (“raise funds” → “engage wi…”).
+
+### Takeaways
+
+- On this 0.5B model and this short eval, **all three edits tie on
+  refusal** (0/12 on our held-out set). ARA also reaches **0/16** on
+  Heretic's own keyword split, a notch better than Abliteration trial 9
+  (1/16) on that same split.
+- On **KL vs. the original**, the ranking on our handwritten harmless
+  set is manual (0.060) < ARA (0.118) < Abliteration (0.202). ARA is
+  closer to the original than the 12-trial Abliteration run, but the
+  single-direction manual edit is still the most surgical of the three.
+- That is a useful correction to the “Heretic is always more surgical”
+  intuition, at least at this budget. ARA's extra degrees of freedom
+  (a LoRA on every matrix in layers 0–22, plus an over-correction term)
+  can drop refusals more thoroughly on Heretic's split, but they also
+  give Optuna more room to over-edit. Trial 10 kept `steer_bad` very
+  small (0.0001) and applied a modest over-correction (0.377) across
+  almost the whole net; that combination won. Trials that pushed
+  over-correction above 1.0 got 0 refusals and a ruined KL.
+- The two Heretic runs used the same trial budget, the same scorer
+  splits, and the same seed, so the comparison is as fair as a 12-trial
+  TPE search on a 0.5B CPU model can be. Default ARA would use rank 50,
+  5 L-BFGS steps, 400+400 behaviour prompts, and 100 trials — this is
+  still a **small-budget** result.
+- Practical: ARA imported `bitsandbytes.functional` but never used the
+  4-bit path on CPU, and ran without a GPU. The earlier `torchvision` /
+  torch 2.15 CPU incompatibility still applies if that wheel is
+  installed.
+
 ## What we would try next
 
 - A 1.5B–7B instruct model on a GPU, with Heretic at its default trial
-  count, to see whether the KL advantage of the automated search becomes
-  clearer.
+  count and default ARA rank, to see whether the KL ranking changes
+  when the search is no longer under-budget.
 - A stricter refusal detector (or a small classifier) so the original
   rate is not a floor.
 - Scoring mid-layer directions with a scale-invariant metric (e.g. a
   standardized mean difference) rather than the raw residual norm.
 - Untying embeddings before orthogonalizing, to measure how much the tied
   `lm_head` edit matters.
-- A side-by-side of Heretic's default **ARA** modifier vs. the Abliteration
-  modifier used here.
+- Constraining ARA's `overcorrect_relative_weight` to stay below 1, to
+  see if that removes the high-KL “broken but uncensored” trials.
